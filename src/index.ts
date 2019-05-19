@@ -1,11 +1,8 @@
-import express from "express";
 import * as dotenv from "dotenv";
 import * as os from "os";
 import { createServer } from "http";
-import * as path from "path";
 import * as gameLoop from "node-gameloop";
 import WebSocket from "ws";
-import { Socket } from "net";
 
 dotenv.config();
 const host = os.hostname();
@@ -54,6 +51,7 @@ const terminate = async () => {
   console.log("Server stopped.");
   process.exit(1);
 };
+
 // Signals on witch we will what to close connection to service.
 process.on("SIGTERM", () => terminate().catch(err => console.log(err)));
 process.on("SIGINT", () => terminate().catch(err => console.log(err)));
