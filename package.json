@@ -1,0 +1,25 @@
+{
+  "name": "multiplayer_game",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start-server": "tsc && node -r source-map-support/register dist",
+    "start-server-dev": "nodemon -r source-map-support/register dist",
+    "watch": "tsc --watch --pretty"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^6.1.1",
+    "@types/express": "^4.16.1",
+    "@types/node": "^12.0.2",
+    "nodemon": "^1.19.0",
+    "typescript": "^3.0.3"
+  },
+  "dependencies": {
+    "dotenv": "^8.0.0",
+    "express": "^4.17.0",
+    "node-gameloop": "^0.1.4",
+    "phaser": "^3.17.0",
+    "source-map-support": "^0.5.12"
+  }
+}
