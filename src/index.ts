@@ -11,34 +11,47 @@ if (!process.env.PORT){
   throw new Error(`PORT not Found! Please set it in environment variables.`);
 }
 const port = process.env.PORT;
+const TICK_TIME = 1000/30;
+let unsimulatedTime = 0;
+let currentTick = 0;
 
-const app = express();
+// const app = express();
 
-app.use(express.static('dist'));
+// app.use(express.static('dist'));
 
-const server = createServer(app);
+// const server = createServer(app);
 
-app.get('/',(req : express.Request, res : express.Response) => {
-  res.sendFile(path.join(__dirname + '/../client/index.html'));
-});
+// app.get('/',(req : express.Request, res : express.Response) => {
+//   res.sendFile(path.join(__dirname + '/../client/index.html'));
+// });
 
-app.get('/favicon.ico',(req : express.Request, res : express.Response) => {
-  res.sendFile(path.join(__dirname + '/../assets/favicon.png'));
-});
+// app.get('/favicon.ico',(req : express.Request, res : express.Response) => {
+//   res.sendFile(path.join(__dirname + '/../assets/favicon.png'));
+// });
 
-server.listen(port, () => {
-  console.log(`Server ready http://${host}:${port}`);
-});
+// server.listen(port, () => {
+//   console.log(`Server ready http://${host}:${port}`);
+// });
 
-// start the loop at 30 fps (1000/30ms per frame) and grab its id
-let frameCount = 0;
+
 const id = gameLoop.setGameLoop(function(delta) {
-	// `delta` is the delta time from the last frame
-	console.log('Hi there! (frame=%s, delta=%s)', frameCount++, delta);
-}, 1000 / 30);
+  unsimulatedTime += delta;
+  while (unsimulatedTime > TICK_TIME){
+    // Simulate physics step
+    unsimulatedTime -= TICK_TIME;
+    currentTick++;
+  }
+  if (currentTick % 1000 === 0){
+    console.log(`Current server tick: ${currentTick}`);
+  }
+}, TICK_TIME);
 
-// stop the loop 2 seconds later
-setTimeout(function() {
-	console.log('2000ms passed, stopping the game loop');
-	gameLoop.clearGameLoop(id);
-}, 2000);
+
+const terminate = async () => {
+  gameLoop.clearGameLoop(id);
+  console.log("Server stopped.");
+  process.exit(1);
+};
+// Signals on witch we will what to close connection to service.
+process.on('SIGTERM', () => terminate().catch(err => console.log(err)));
+process.on('SIGINT', () => terminate().catch(err => console.log(err)));
