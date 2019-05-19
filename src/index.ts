@@ -3,6 +3,16 @@ import * as os from "os";
 import { createServer } from "http";
 import * as gameLoop from "node-gameloop";
 import WebSocket from "ws";
+import Player from "./game/Player";
+import Rocket from "./game/Rocket";
+import Bullet from "./game/Bullet";
+import {
+  CLIENTS,
+  ClientMessage,
+  ACTIONS,
+  NetworkMsg,
+} from "./types/NetworkTypes";
+import GameManager from "./game/GameManager";
 
 dotenv.config();
 const host = os.hostname();
@@ -19,28 +29,60 @@ const server = createServer();
 
 const ws = new WebSocket.Server({ server });
 
+const gameManager = new GameManager();
+
 ws.on("connection", socket => {
-  console.log("NEW USER CONNECTED!");
-
-  socket.onmessage = message => console.log("received: %s", message);
-
-  socket.onclose = () => console.log("User disconnected");
+  if (socket.protocol === CLIENTS.PLAYER) {
+    console.log("New Player Connected!");
+    const player = gameManager.addNewPlayer(socket);
+    socket.onclose = () => {
+      console.log("Player disconnected");
+      if (player) {
+        gameManager.removePlayer(player.id);
+      }
+    };
+    if (player) {
+      socket.onmessage = message => {
+        const msg: ClientMessage = JSON.parse(message.data.toString());
+        if (msg.action === ACTIONS.MOVE) {
+          player.moveTo(msg.x, msg.y);
+        } else if (msg.action === ACTIONS.ROCKET) {
+          gameManager.addRocket(player.id, player.x, player.y, msg.x, msg.y);
+        } else if (msg.action === ACTIONS.BULLET) {
+          gameManager.addBullet(player.id, player.x, player.y, msg.x, msg.y);
+        }
+      };
+    }
+  } else {
+    console.log("New Spactator Connected!");
+    socket.onclose = () => console.log("Spectator disconnected");
+  }
 
   socket.send("welcome to the game!");
 });
 
+const broadcastGameState = (gameState: NetworkMsg) => {
+  ws.clients.forEach(function each(client) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(gameState));
+    }
+  });
+};
+
 server.listen(port, () => {
-  console.log(`Server ready http://${host}:${port}`);
+  console.log(`Server ready ws://${host}:${port}`);
 });
 
 const id = gameLoop.setGameLoop(function(delta) {
   unsimulatedTime += delta;
 
   while (unsimulatedTime > TICK_TIME_SECONDS) {
-    // Simulate physics step
+    gameManager.SimulateStep(TICK_TIME);
     unsimulatedTime -= TICK_TIME_SECONDS;
     currentTick++;
   }
+  broadcastGameState(gameManager.getCurrentState());
+
   if (currentTick % 1000 === 0) {
     console.log(`Current server tick: ${currentTick}`);
   }

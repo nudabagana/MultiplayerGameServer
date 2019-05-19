@@ -1,14 +1,28 @@
-import { windowSize, rocketSize } from "../config";
-import { getRandomInt } from "../utils";
-import "phaser";
-import DrawableObject from "./DrawableObject";
+import GameObject from "./GameObject";
+import { rocketSpeed, rocketSize } from "../config";
+import { GameObjectTypes } from "../types/GameObjectTypes";
 
-export default class Rocket extends DrawableObject {
+export default class Rocket extends GameObject {
+  playerId: number;
 
-  draw = () => {
-    this.g.fillStyle(this.color);
-    this.g.lineStyle(2, 0x000000);
-    this.g.fillCircle(this.x, this.y, rocketSize);
-    this.g.strokeCircle(this.x, this.y, rocketSize);
+  constructor(
+    id: number,
+    playerId: number,
+    x: number,
+    y: number,
+    destX: number,
+    destY: number
+  ) {
+    super(id, x, y, rocketSpeed, GameObjectTypes.ROCKET, rocketSize);
+    this.destinationX = destX;
+    this.destinationY = destY;
+    this.playerId = playerId;
+    this.RecalculateXYPercentages();
+    console.log("ROCKET!");
+  }
+
+  move = (delta: number) => {
+    this.x += delta * this.xPerT;
+    this.y += delta * this.yPerT;
   };
 }

@@ -1,15 +1,26 @@
-import { windowSize, bulletSize } from "../config";
-import { getRandomInt } from "../utils";
-import "phaser";
+import { bulletSize, bulletSpeed } from "../config";
+import { GameObjectTypes } from "../types/GameObjectTypes";
+import GameObject from "./GameObject";
 
-import DrawableObject from "./DrawableObject";
+export default class Bullet extends GameObject {
+  playerId: number;
 
-export default class Bullet extends DrawableObject {
-
-  draw = () => {
-    this.g.fillStyle(this.color);
-    this.g.lineStyle(2, 0x000000);
-    this.g.fillCircle(this.x, this.y, bulletSize);
-    this.g.strokeCircle(this.x, this.y, bulletSize);
+  constructor(
+    id: number,
+    playerId: number,
+    x: number,
+    y: number,
+    destX: number,
+    destY: number
+  ) {
+    super(id, x, y, bulletSpeed, GameObjectTypes.BULLET, bulletSize);
+    this.destinationX = destX;
+    this.destinationY = destY;
+    this.playerId = playerId;
+    this.RecalculateXYPercentages();
+  }
+  move = (delta: number) => {
+    this.x += delta * this.xPerT;
+    this.y += delta * this.yPerT;
   };
 }
