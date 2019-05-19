@@ -1,18 +1,15 @@
 import * as dotenv from "dotenv";
-import * as os from "os";
 import { createServer } from "http";
 import * as gameLoop from "node-gameloop";
+import * as os from "os";
 import WebSocket from "ws";
-import Player from "./game/Player";
-import Rocket from "./game/Rocket";
-import Bullet from "./game/Bullet";
+import GameManager from "./game/GameManager";
 import {
-  CLIENTS,
-  ClientMessage,
   ACTIONS,
+  ClientMessage,
+  CLIENTS,
   NetworkMsg,
 } from "./types/NetworkTypes";
-import GameManager from "./game/GameManager";
 
 dotenv.config();
 const host = os.hostname();
