@@ -29,8 +29,10 @@ export default class GameManager {
 
   addNewPlayer = (socket: WebSocket) => {
     if (this.players.length < 2) {
+      const playerId = this.players[0] ? this.players[0].id === 1 ? 2 : 1 : 1;
       const player = new Player(
-        this.players.length,
+        socket,
+        playerId,
         playerSize + getRandomInt(windowSize.width - playerSize * 2),
         playerSize + getRandomInt(windowSize.height - playerSize * 2),
         100

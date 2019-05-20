@@ -10,6 +10,7 @@ import {
   CLIENTS,
   NetworkMsg,
 } from "./types/NetworkTypes";
+import {sendData, receiveData, setDelay} from "./simulation/networkDelaySimulation"
 
 dotenv.config();
 const host = os.hostname();
@@ -41,27 +42,32 @@ ws.on("connection", socket => {
     if (player) {
       socket.onmessage = message => {
         const msg: ClientMessage = JSON.parse(message.data.toString());
-        if (msg.action === ACTIONS.MOVE) {
-          player.moveTo(msg.x, msg.y);
-        } else if (msg.action === ACTIONS.ROCKET) {
-          gameManager.addRocket(player.id, player.x, player.y, msg.x, msg.y);
-        } else if (msg.action === ACTIONS.BULLET) {
-          gameManager.addBullet(player.id, player.x, player.y, msg.x, msg.y);
+        if (msg.action === ACTIONS.SET_PING){
+          setDelay(msg.x);
         }
+        receiveData(() => {
+          if (msg.action === ACTIONS.MOVE) {
+            player.moveTo(msg.x, msg.y);
+          } else if (msg.action === ACTIONS.ROCKET) {
+            gameManager.addRocket(player.id, player.x, player.y, msg.x, msg.y);
+          } else if (msg.action === ACTIONS.BULLET) {
+            gameManager.addBullet(player.id, player.x, player.y, msg.x, msg.y);
+          }
+        }, true);
       };
     }
   } else {
     console.log("New Spactator Connected!");
     socket.onclose = () => console.log("Spectator disconnected");
   }
-
-  socket.send("welcome to the game!");
 });
 
 const broadcastGameState = (gameState: NetworkMsg) => {
   ws.clients.forEach(function each(client) {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(gameState));
+    if (client.protocol === CLIENTS.PLAYER){
+      sendData(client, JSON.stringify(gameState),true);
+    } else {
+      sendData(client, JSON.stringify(gameState),false);
     }
   });
 };

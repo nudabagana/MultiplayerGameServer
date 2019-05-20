@@ -2,6 +2,7 @@ export enum ACTIONS {
   MOVE = 0,
   BULLET = 1,
   ROCKET = 2,
+  SET_PING = 3,
 }
 
 export interface NetworkMsg {
@@ -37,4 +38,5 @@ export interface ClientMessage {
   action: ACTIONS;
   x: number;
   y: number;
+  ping?: number;
 }
