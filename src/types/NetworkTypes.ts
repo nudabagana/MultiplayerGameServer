@@ -6,6 +6,7 @@ export enum ACTIONS {
 }
 
 export interface NetworkMsg {
+  tick: number;
   players: Player[];
   rockets: Rocket[];
   bullets: Bullet[];

@@ -65,9 +65,10 @@ ws.on("connection", socket => {
 const broadcastGameState = (gameState: NetworkMsg) => {
   ws.clients.forEach(function each(client) {
     if (client.protocol === CLIENTS.PLAYER){
-      sendData(client, JSON.stringify(gameState),true);
+      sendData(client, JSON.stringify({gameState, trueState: false}),true);
+      sendData(client, JSON.stringify({gameState, trueState: true}),false);
     } else {
-      sendData(client, JSON.stringify(gameState),false);
+      sendData(client, JSON.stringify({gameState, trueState: false}),false);
     }
   });
 };
@@ -84,7 +85,7 @@ const id = gameLoop.setGameLoop(function(delta) {
     unsimulatedTime -= TICK_TIME_SECONDS;
     currentTick++;
   }
-  broadcastGameState(gameManager.getCurrentState());
+  broadcastGameState(gameManager.getCurrentState(currentTick));
 
   if (currentTick % 1000 === 0) {
     console.log(`Current server tick: ${currentTick}`);

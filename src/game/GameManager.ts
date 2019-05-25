@@ -44,8 +44,9 @@ export default class GameManager {
     }
   };
 
-  getCurrentState = (): NetworkMsg => {
+  getCurrentState = (tick: number): NetworkMsg => {
     return {
+      tick,
       players: this.players.map(player => ({
         id: player.id,
         x: player.x,
