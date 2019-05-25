@@ -1,3 +1,5 @@
+import { GameObjectTypes } from "./GameObjectTypes";
+
 export enum ACTIONS {
   MOVE = 0,
   BULLET = 1,
@@ -7,9 +9,7 @@ export enum ACTIONS {
 
 export interface NetworkMsg {
   tick: number;
-  players: Player[];
-  rockets: Rocket[];
-  bullets: Bullet[];
+  gameObjects: ServerGameObject[];
 }
 
 export enum CLIENTS {
@@ -18,6 +18,7 @@ export enum CLIENTS {
 }
 
 interface ServerGameObject {
+  type: GameObjectTypes;
   id: number;
   x: number;
   y: number;

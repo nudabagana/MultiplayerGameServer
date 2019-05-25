@@ -11,25 +11,23 @@ import Bullet from "./Bullet";
 import Player from "./Player";
 import Rocket from "./Rocket";
 import GameObject from "./GameObject";
+import { GameObjectTypes } from "../types/GameObjectTypes";
 
 export default class GameManager {
-  players: Player[];
-  rockets: Rocket[];
-  bullets: Bullet[];
+  gameObjects: GameObject[];
   nextRocketId: number;
   nextBulletId: number;
 
   constructor() {
-    this.players = [];
-    this.rockets = [];
-    this.bullets = [];
+    this.gameObjects = [];
     this.nextRocketId = 0;
     this.nextBulletId = 0;
   }
 
   addNewPlayer = (socket: WebSocket) => {
-    if (this.players.length < 2) {
-      const playerId = this.players[0] ? this.players[0].id === 1 ? 2 : 1 : 1;
+    const players = this.getPlayers();
+    if (players.length < 2) {
+      const playerId = players[0] ? (players[0].id === 1 ? 2 : 1) : 1;
       const player = new Player(
         socket,
         playerId,
@@ -37,34 +35,45 @@ export default class GameManager {
         playerSize + getRandomInt(windowSize.height - playerSize * 2),
         100
       );
-      this.players.push(player);
+      this.gameObjects.push(player);
       return player;
     } else {
       return null;
     }
   };
 
+  getPlayers = () => {
+    const players: Player[] = [];
+    this.gameObjects.forEach(obj => {
+      if (obj.type === GameObjectTypes.PLAYER) {
+        players.push(obj as Player);
+      }
+    });
+    return players;
+  };
+
   getCurrentState = (tick: number): NetworkMsg => {
     return {
       tick,
-      players: this.players.map(player => ({
-        id: player.id,
-        x: player.x,
-        y: player.y,
-        health: player.health,
-      })),
-      rockets: this.rockets.map(rocket => ({
-        id: rocket.id,
-        x: rocket.x,
-        y: rocket.y,
-        playerId: rocket.playerId,
-      })),
-      bullets: this.bullets.map(bullet => ({
-        id: bullet.id,
-        x: bullet.x,
-        y: bullet.y,
-        playerId: bullet.playerId,
-      })),
+      gameObjects: this.gameObjects.map(obj => {
+        if (obj.type === GameObjectTypes.PLAYER) {
+          return {
+            type: obj.type,
+            id: obj.id,
+            x: obj.x,
+            y: obj.y,
+            health: (obj as Player).health,
+          };
+        } else {
+          return {
+            type: obj.type,
+            id: obj.id,
+            x: obj.x,
+            y: obj.y,
+            playerId: (obj as Rocket).playerId,
+          };
+        }
+      }),
     };
   };
 
@@ -75,36 +84,21 @@ export default class GameManager {
   };
 
   move = (delta: number) => {
-    this.players.forEach(player => player.move(delta));
-    this.rockets.forEach(rocket => rocket.move(delta));
-    this.bullets.forEach(bullet => bullet.move(delta));
+    this.gameObjects.forEach(obj => obj.move(delta));
   };
 
   checkCollisions = () => {
-    this.players.forEach(object => {
-      this.players.forEach(other => {
-        if (this.checkCollision(object, other)) {
-          object.onCollision(other);
-        }
-      });
-      this.rockets.forEach(other => {
-        if (this.checkCollision(object, other)) {
-          object.onCollision(other);
-        }
-      });
-    });
-
-    this.rockets.forEach(object => {
-      this.players.forEach(other => {
-        if (this.checkCollision(object, other)) {
-          object.onCollision(other);
-        }
-      });
-      this.rockets.forEach(other => {
-        if (this.checkCollision(object, other)) {
-          object.onCollision(other);
-        }
-      });
+    this.gameObjects.forEach(object => {
+      if (object.type !== GameObjectTypes.BULLET) {
+        this.gameObjects.forEach(other => {
+          if (
+            other.type !== GameObjectTypes.BULLET &&
+            this.checkCollision(object, other)
+          ) {
+            object.onCollision(other);
+          }
+        });
+      }
     });
   };
 
@@ -142,25 +136,17 @@ export default class GameManager {
   };
 
   destroy = () => {
-    this.players.forEach(player => {
-      if (player.shouldBeDestroyed) {
-        this.removePlayer(player.id);
-      }
-    });
-    this.rockets.forEach(rocket => {
-      if (rocket.shouldBeDestroyed) {
-        this.removeRocket(rocket.id);
-      }
-    });
-    this.bullets.forEach(bullet => {
-      if (bullet.shouldBeDestroyed) {
-        this.removeBullet(bullet.id);
+    this.gameObjects.forEach(obj => {
+      if (obj.shouldBeDestroyed) {
+        this.removeGameObject(obj);
       }
     });
   };
 
-  removePlayer = (id: number) => {
-    this.players = this.players.filter(player => player.id !== id);
+  removeGameObject = (obj: GameObject) => {
+    this.gameObjects = this.gameObjects.filter(
+      o => o.id !== obj.id || o.type !== obj.type
+    );
   };
 
   addRocket = (
@@ -171,13 +157,9 @@ export default class GameManager {
     destY: number
   ) => {
     const rocket = new Rocket(this.nextRocketId, playerId, x, y, destX, destY);
-    this.rockets.push(rocket);
-    setTimeout(() => this.removeRocket(rocket.id), rocketLifespan);
+    this.gameObjects.push(rocket);
+    setTimeout(() => this.removeGameObject(rocket), rocketLifespan);
     this.nextRocketId++;
-  };
-
-  removeRocket = (id: number) => {
-    this.rockets = this.rockets.filter(rocket => rocket.id !== id);
   };
 
   addBullet = (
@@ -188,29 +170,17 @@ export default class GameManager {
     destY: number
   ) => {
     const bullet = new Bullet(this.nextBulletId, playerId, x, y, destX, destY);
-    this.players.forEach(player => {
-      if (player.id !== playerId) {
+    this.gameObjects.forEach(obj => {
+      if (obj.type === GameObjectTypes.PLAYER && obj.id !== playerId) {
         if (
-          this.checkCollisionBullet(
-            x,
-            y,
-            destX,
-            destY,
-            player.x,
-            player.y,
-            player.size
-          )
+          this.checkCollisionBullet(x, y, destX, destY, obj.x, obj.y, obj.size)
         ) {
-          player.onCollision(bullet);
+          obj.onCollision(bullet);
         }
       }
     });
-    this.bullets.push(bullet);
-    setTimeout(() => this.removeBullet(bullet.id), bulletLifespan);
+    this.gameObjects.push(bullet);
+    setTimeout(() => this.removeGameObject(bullet), bulletLifespan);
     this.nextBulletId++;
-  };
-
-  removeBullet = (id: number) => {
-    this.bullets = this.bullets.filter(bullet => bullet.id !== id);
   };
 }

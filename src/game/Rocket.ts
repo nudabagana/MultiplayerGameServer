@@ -18,7 +18,6 @@ export default class Rocket extends GameObject {
     this.destinationY = destY;
     this.playerId = playerId;
     this.RecalculateXYPercentages();
-    console.log("ROCKET!");
   }
 
   move = (delta: number) => {

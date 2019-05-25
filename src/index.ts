@@ -36,7 +36,7 @@ ws.on("connection", socket => {
     socket.onclose = () => {
       console.log("Player disconnected");
       if (player) {
-        gameManager.removePlayer(player.id);
+        gameManager.removeGameObject(player);
       }
     };
     if (player) {
