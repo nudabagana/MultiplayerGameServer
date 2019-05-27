@@ -106,7 +106,11 @@ const id = gameLoop.setGameLoop(function(delta) {
     unsimulatedTime -= TICK_TIME_SECONDS;
     currentTick++;
   }
-  broadcastMessageNoDelay(gameManager.getCurrentState(currentTick));
+  const state = gameManager.getCurrentState(currentTick)
+  broadcastMessageNoDelay(state);
+  if (currentTick % 10 === 0) {
+    broadcastMessage(state);
+  }
 
   if (currentTick % 1000 === 0) {
     console.log(`Current server tick: ${currentTick}`);
