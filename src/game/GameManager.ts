@@ -5,7 +5,7 @@ import {
   rocketLifespan,
   windowSize,
 } from "../config";
-import { NetworkMsg } from "../types/NetworkTypes";
+import { NetworkMsg, NetworkMsgTypes } from "../types/NetworkTypes";
 import { getRandomInt } from "../utils";
 import Bullet from "./Bullet";
 import Player from "./Player";
@@ -74,6 +74,7 @@ export default class GameManager {
           };
         }
       }),
+      type: NetworkMsgTypes.STATE
     };
   };
 
@@ -160,6 +161,7 @@ export default class GameManager {
     this.gameObjects.push(rocket);
     setTimeout(() => this.removeGameObject(rocket), rocketLifespan);
     this.nextRocketId++;
+    return rocket;
   };
 
   addBullet = (
@@ -182,5 +184,6 @@ export default class GameManager {
     this.gameObjects.push(bullet);
     setTimeout(() => this.removeGameObject(bullet), bulletLifespan);
     this.nextBulletId++;
+    return bullet;
   };
 }

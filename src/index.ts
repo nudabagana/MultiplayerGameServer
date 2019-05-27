@@ -6,11 +6,12 @@ import WebSocket from "ws";
 import GameManager from "./game/GameManager";
 import {
   ACTIONS,
-  ClientMessage,
+  GameAction,
   CLIENTS,
   NetworkMsg,
+  NetworkMsgTypes,
 } from "./types/NetworkTypes";
-import {sendData, receiveData, setDelay} from "./simulation/networkDelaySimulation"
+import {sendData, receiveData} from "./simulation/networkDelaySimulation"
 
 dotenv.config();
 const host = os.hostname();
@@ -30,29 +31,40 @@ const ws = new WebSocket.Server({ server });
 const gameManager = new GameManager();
 
 ws.on("connection", socket => {
+  sendData(socket,JSON.stringify({data: { type: NetworkMsgTypes.SET_TICK, tick: currentTick }, trueState: false}),true);
+  gameManager.getPlayers().forEach( player => {
+    sendData(socket,JSON.stringify({data: { type: NetworkMsgTypes.CREATE, tick: currentTick, gameObject: player  }, trueState: false}),true);
+  })
+
   if (socket.protocol === CLIENTS.PLAYER) {
     console.log("New Player Connected!");
     const player = gameManager.addNewPlayer(socket);
     socket.onclose = () => {
       console.log("Player disconnected");
       if (player) {
+        broadcastMessage({type: NetworkMsgTypes.DELETE, tick: currentTick, gameObject: player });
         gameManager.removeGameObject(player);
       }
     };
     if (player) {
+      // create player
+      broadcastMessage({type: NetworkMsgTypes.CREATE, tick: currentTick, gameObject: player });
+
+
       socket.onmessage = message => {
-        const msg: ClientMessage = JSON.parse(message.data.toString());
-        if (msg.action === ACTIONS.SET_PING){
-          setDelay(msg.x);
-        }
+        const msg: GameAction = JSON.parse(message.data.toString());
         receiveData(() => {
+          msg.playerId = player.id;
           if (msg.action === ACTIONS.MOVE) {
             player.moveTo(msg.x, msg.y);
           } else if (msg.action === ACTIONS.ROCKET) {
-            gameManager.addRocket(player.id, player.x, player.y, msg.x, msg.y);
+            const rocket = gameManager.addRocket(player.id, player.x, player.y, msg.x, msg.y);
+            msg.id = rocket.id;
           } else if (msg.action === ACTIONS.BULLET) {
-            gameManager.addBullet(player.id, player.x, player.y, msg.x, msg.y);
+            const bullet = gameManager.addBullet(player.id, player.x, player.y, msg.x, msg.y);
+            msg.id = bullet.id;
           }
+          broadcastMessage({type: NetworkMsgTypes.ACTION, tick: currentTick, action: msg });
         }, true);
       };
     }
@@ -62,13 +74,22 @@ ws.on("connection", socket => {
   }
 });
 
-const broadcastGameState = (gameState: NetworkMsg) => {
+const broadcastMessage = (data: NetworkMsg) => {
   ws.clients.forEach(function each(client) {
     if (client.protocol === CLIENTS.PLAYER){
-      sendData(client, JSON.stringify({gameState, trueState: false}),true);
-      sendData(client, JSON.stringify({gameState, trueState: true}),false);
+      sendData(client, JSON.stringify({data, trueState: false}),true);
     } else {
-      sendData(client, JSON.stringify({gameState, trueState: false}),false);
+      sendData(client, JSON.stringify({data, trueState: false}),false);
+    }
+  });
+};
+
+const broadcastMessageNoDelay = (data: NetworkMsg) => {
+  ws.clients.forEach(function each(client) {
+    if (client.protocol === CLIENTS.PLAYER){
+      sendData(client, JSON.stringify({data, trueState: true}),false);
+    } else {
+      sendData(client, JSON.stringify({data, trueState: false}),false);
     }
   });
 };
@@ -85,7 +106,7 @@ const id = gameLoop.setGameLoop(function(delta) {
     unsimulatedTime -= TICK_TIME_SECONDS;
     currentTick++;
   }
-  broadcastGameState(gameManager.getCurrentState(currentTick));
+  broadcastMessageNoDelay(gameManager.getCurrentState(currentTick));
 
   if (currentTick % 1000 === 0) {
     console.log(`Current server tick: ${currentTick}`);

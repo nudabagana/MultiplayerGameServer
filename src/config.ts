@@ -2,7 +2,7 @@ export const windowSize = {  width: 1000,height: 800 };
 export const defaultDelay = 0;  // RTT = 0
 // export const defaultDelay = 25; // RTT = 50
 // export const defaultDelay = 75; // RTT = 150
-// export const defaultDelay = 175; // RTT = 350
+// export const defaultDelay = 175; // RTT = 350   
 // export const defaultDelay = 350; // RTT = 700
 // player
 export const maxHealh = 100;
