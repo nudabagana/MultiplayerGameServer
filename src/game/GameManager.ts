@@ -15,13 +15,9 @@ import { GameObjectTypes } from "../types/GameObjectTypes";
 
 export default class GameManager {
   gameObjects: GameObject[];
-  nextRocketId: number;
-  nextBulletId: number;
 
   constructor() {
     this.gameObjects = [];
-    this.nextRocketId = 0;
-    this.nextBulletId = 0;
   }
 
   addNewPlayer = (socket: WebSocket) => {
@@ -154,13 +150,13 @@ export default class GameManager {
     playerId: number,
     x: number,
     y: number,
+    id: number,
     destX: number,
     destY: number
   ) => {
-    const rocket = new Rocket(this.nextRocketId, playerId, x, y, destX, destY);
+    const rocket = new Rocket(id, playerId, x, y, destX, destY);
     this.gameObjects.push(rocket);
     setTimeout(() => this.removeGameObject(rocket), rocketLifespan);
-    this.nextRocketId++;
     return rocket;
   };
 
@@ -168,10 +164,11 @@ export default class GameManager {
     playerId: number,
     x: number,
     y: number,
+    id: number,
     destX: number,
     destY: number
   ) => {
-    const bullet = new Bullet(this.nextBulletId, playerId, x, y, destX, destY);
+    const bullet = new Bullet(id, playerId, x, y, destX, destY);
     this.gameObjects.forEach(obj => {
       if (obj.type === GameObjectTypes.PLAYER && obj.id !== playerId) {
         if (
@@ -183,7 +180,6 @@ export default class GameManager {
     });
     this.gameObjects.push(bullet);
     setTimeout(() => this.removeGameObject(bullet), bulletLifespan);
-    this.nextBulletId++;
     return bullet;
   };
 }

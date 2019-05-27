@@ -49,6 +49,7 @@ ws.on("connection", socket => {
     if (player) {
       // create player
       broadcastMessage({type: NetworkMsgTypes.CREATE, tick: currentTick, gameObject: player });
+      sendData(socket,JSON.stringify({data: { type: NetworkMsgTypes.SET_Player_ID, tick: currentTick, gameObject: player }, trueState: false}),true);
 
 
       socket.onmessage = message => {
@@ -58,10 +59,10 @@ ws.on("connection", socket => {
           if (msg.action === ACTIONS.MOVE) {
             player.moveTo(msg.x, msg.y);
           } else if (msg.action === ACTIONS.ROCKET) {
-            const rocket = gameManager.addRocket(player.id, player.x, player.y, msg.x, msg.y);
+            const rocket = gameManager.addRocket(player.id, player.x, player.y, msg.id, msg.x, msg.y);
             msg.id = rocket.id;
           } else if (msg.action === ACTIONS.BULLET) {
-            const bullet = gameManager.addBullet(player.id, player.x, player.y, msg.x, msg.y);
+            const bullet = gameManager.addBullet(player.id, player.x, player.y, msg.id, msg.x, msg.y);
             msg.id = bullet.id;
           }
           broadcastMessage({type: NetworkMsgTypes.ACTION, tick: currentTick, action: msg });

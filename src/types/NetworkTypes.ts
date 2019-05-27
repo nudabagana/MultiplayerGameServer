@@ -12,6 +12,7 @@ export enum NetworkMsgTypes {
   CREATE = 2,
   DELETE = 3,
   SET_TICK = 4,
+  SET_Player_ID = 5,
 }
 
 export interface NetworkMsg {
@@ -47,7 +48,7 @@ interface Bullet extends ServerGameObject {
 }
 
 export interface GameAction {
-  id?:number;
+  id:number;
   playerId?: number;
   action: ACTIONS;
   x: number;
