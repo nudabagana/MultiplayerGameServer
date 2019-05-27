@@ -4,6 +4,7 @@ import {
   playerSize,
   rocketLifespan,
   windowSize,
+  savedStatesAmount,
 } from "../config";
 import { NetworkMsg, NetworkMsgTypes } from "../types/NetworkTypes";
 import { getRandomInt } from "../utils";
@@ -11,13 +12,17 @@ import Bullet from "./Bullet";
 import Player from "./Player";
 import Rocket from "./Rocket";
 import GameObject from "./GameObject";
-import { GameObjectTypes } from "../types/GameObjectTypes";
+import { GameObjectTypes, IGameStateStorage } from "../types/GameObjectTypes";
 
 export default class GameManager {
   gameObjects: GameObject[];
+  pastStates: IGameStateStorage;
+  latestStateTick: number;
 
   constructor() {
     this.gameObjects = [];
+    this.pastStates = {};
+    this.latestStateTick = 0;
   }
 
   addNewPlayer = (socket: WebSocket) => {
@@ -48,6 +53,10 @@ export default class GameManager {
     return players;
   };
 
+  getGameObject = (id: number, type: GameObjectTypes) => {
+    return this.gameObjects.find(obj => obj.id === id && obj.type === type);
+  };
+
   getCurrentState = (tick: number): NetworkMsg => {
     return {
       tick,
@@ -74,11 +83,18 @@ export default class GameManager {
     };
   };
 
-  SimulateStep = (delta: number) => {
+  SimulateStep = (delta: number, tick: number) => {
+    this.saveState(tick);
     this.move(delta);
     this.checkCollisions();
     this.destroy();
   };
+
+  saveState = (tick: number) => {
+    this.pastStates[tick] = JSON.parse(JSON.stringify(this.gameObjects));
+    this.latestStateTick = tick - savedStatesAmount;
+    delete this.pastStates[tick - savedStatesAmount-1]; 
+  }
 
   move = (delta: number) => {
     this.gameObjects.forEach(obj => obj.move(delta));
@@ -166,15 +182,29 @@ export default class GameManager {
     y: number,
     id: number,
     destX: number,
-    destY: number
+    destY: number,
+    playerTick?: number,
   ) => {
     const bullet = new Bullet(id, playerId, x, y, destX, destY);
-    this.gameObjects.forEach(obj => {
+    let gameObjects = this.gameObjects;
+    if (playerTick){
+      if (this.pastStates[playerTick]){
+        gameObjects = this.pastStates[playerTick];
+      } else if (playerTick < this.latestStateTick){
+        gameObjects = this.pastStates[this.latestStateTick];
+      }
+    }
+
+    gameObjects.forEach(obj => {
       if (obj.type === GameObjectTypes.PLAYER && obj.id !== playerId) {
         if (
           this.checkCollisionBullet(x, y, destX, destY, obj.x, obj.y, obj.size)
         ) {
-          obj.onCollision(bullet);
+          const collidedObj = this.getGameObject(obj.id, obj.type);
+          if (collidedObj)
+          {
+            collidedObj.onCollision(bullet);
+          }
         }
       }
     });

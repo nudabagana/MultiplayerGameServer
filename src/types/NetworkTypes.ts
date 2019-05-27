@@ -48,6 +48,7 @@ interface Bullet extends ServerGameObject {
 }
 
 export interface GameAction {
+  tick: number;
   id:number;
   playerId?: number;
   action: ACTIONS;

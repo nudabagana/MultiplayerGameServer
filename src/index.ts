@@ -62,7 +62,7 @@ ws.on("connection", socket => {
             const rocket = gameManager.addRocket(player.id, player.x, player.y, msg.id, msg.x, msg.y);
             msg.id = rocket.id;
           } else if (msg.action === ACTIONS.BULLET) {
-            const bullet = gameManager.addBullet(player.id, player.x, player.y, msg.id, msg.x, msg.y);
+            const bullet = gameManager.addBullet(player.id, player.x, player.y, msg.id, msg.x, msg.y, msg.tick);
             msg.id = bullet.id;
           }
           broadcastMessage({type: NetworkMsgTypes.ACTION, tick: currentTick, action: msg });
@@ -103,7 +103,7 @@ const id = gameLoop.setGameLoop(function(delta) {
   unsimulatedTime += delta;
 
   while (unsimulatedTime > TICK_TIME_SECONDS) {
-    gameManager.SimulateStep(TICK_TIME);
+    gameManager.SimulateStep(TICK_TIME, currentTick);
     unsimulatedTime -= TICK_TIME_SECONDS;
     currentTick++;
   }

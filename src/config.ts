@@ -1,9 +1,9 @@
 export const windowSize = {  width: 1000,height: 800 };
-export const defaultDelay = 0;  // RTT = 0
+// export const defaultDelay = 0;  // RTT = 0
 // export const defaultDelay = 25; // RTT = 50
 // export const defaultDelay = 75; // RTT = 150
 // export const defaultDelay = 175; // RTT = 350   
-// export const defaultDelay = 350; // RTT = 700
+export const defaultDelay = 350; // RTT = 700
 // player
 export const maxHealh = 100;
 export const playerSize = 50;
@@ -25,3 +25,4 @@ export const bulletDamage = 5;
 export const GREEN = 0x00ff00;
 export const RED = 0xff0000;
 export const longClickDurationMs = 1000;
+export const savedStatesAmount = 60;
