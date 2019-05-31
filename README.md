@@ -8,4 +8,5 @@ There are multiple branches of this project. Different branch has different tech
 # Run instructions
 1. Make sure you have Server and Client pulled from the same branch.
 2. copy .env.example file and rename it to .env
-3. yarn start-server
+3. yarn (to downlaod node_modules)
+4. yarn start-server
